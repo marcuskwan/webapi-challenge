@@ -59,17 +59,20 @@ server.get("/people", (req, res) => {
 // get chores
 server.get("/:userId/chores", (req, res) => {
   // store userId from url
-  const userId = req.params.userId;
+  const userId = parseInt(req.params.userId);
   // store person that has userId
-  const foundPerson = people.find(person => person.id === userId);
+  const foundPerson = people.find(person => {
+    console.log("person", person);
+    return person.id === userId;
+  });
   // if foundPerson exists..
   if (foundPerson) {
     // if chores exists, return chores
     if (foundPerson.chores) {
-      res.status(200).json(person.chores);
+      res.status(200).json(foundPerson.chores);
       // if chores does not exist, return empty array
     } else {
-      return [];
+      res.status(500).json([]);
     }
   }
   // if foundPerson doesn't exist, it means no person had the user Id
@@ -88,24 +91,27 @@ server.post("/people", validateUser, (req, res) => {
   const newPerson = { id: latestUserId, ...req.body };
   // add the new person to our people array
   people.push(newPerson);
+  // send a 200 response with our updated people array
+  res.status(200).json(people);
 });
 
 // post new chore
 server.post("/chores", validateChore, (req, res) => {
   // store the id from the chore's assignedId
-  const { assignedId } = req.body;
+  const assignedId = req.body.assignedTo;
   // store person that has userId
   const foundPerson = people.find(person => person.id === assignedId);
   // if foundPerson exists..
   if (foundPerson) {
     // create a variable that is one more than the latest chores ID
     const latestChoreId =
-      foundPerson.chores[foundPerson.chores.length - 1].id || 1;
+      foundPerson.chores[foundPerson.chores.length - 1].id + 1 || 1;
     // create the newChore that we'll add to that person's chores array
     const newChore = {
       // fill out the newChore with the stuff our FE sent us..
       id: latestChoreId,
       description: req.body.description,
+      //? optional, maybe you can make it that by default its an empty string?
       notes: req.body.notes,
       assignedTo: assignedId,
       // competed is either what the FE sent us, or by default false
@@ -114,15 +120,17 @@ server.post("/chores", validateChore, (req, res) => {
     // check to see if there is an existing chores array under that user, if they do, add it to the person's chores array
     if (foundPerson.chores) {
       foundPerson.chores = [...foundPerson.chores, newChore];
+      res.status(200).json(people);
     } // otherwise, create one and add the the new chore object to it
     else {
       foundPerson.chores = [newChore];
+      res.status(200).json(people);
     }
   }
   // if foundPerson doesn't exist, it means no person had the user Id, or a wrong assignedTo ID was given
   else {
     res.status(400).json({
-      message: "User ID doesn't exist, please input a valid assigned ID",
+      message: "User ID doesn't exist, please input a valid assignedTo ID",
     });
   }
 });

@@ -39,14 +39,24 @@ Commit your code regularly and use descriptive messages. This helps both you (in
 Demonstrate your understanding of this Sprint's concepts by answering the following free-form questions. Edit this document to include your answers after each question. Make sure to leave a blank line above and below your answer so it is clear and easy to read by your Team Lead.
 
 - [ ] Mention two parts of Express that you learned about this week.
+quick way to add crud functionality
+using res.status, post get put delete
 
 - [ ] What is Express Middleware?
+functions that intervene in the middle in the middle of your request/response?
+super cool since you can validate stuff and write your if statements on the client requests
+there are custom ones too
 
 - [ ] How can a client send data to an API?
+they can do crud operations to specific endpoints by a backend?
 
 - [ ] What can the API return to help clients know if a request was successful?
+a response status code of 200?
 
 - [ ] What Express feature can we use to partition an application into sub-applications?
+the router express package, i'm not really sure what this does, but
+docs say this "Use the express.Router class to create modular, mountable route handlers. A Router instance is a complete middleware and routing system; for this reason, it is often referred to as a “mini-app”.
+dont know what it means though
 
 ## Minimum Viable Product
 
