@@ -1,8 +1,8 @@
 const express = require("express");
 
-// people array
+// users array
 
-let people = [
+let users = [
   {
     id: 1,
     name: "Frodo Baggins",
@@ -50,64 +50,83 @@ server.get("/", (req, res) => {
 // const postRoutes = require("./posts/postRouter");
 
 // get
-// get people
-server.get("/people", (req, res) => {
-  res.status(200).json(people);
-  // res.json(people)
+// get users
+server.get("/users", (req, res) => {
+  res.status(200).json(users);
+  // res.json(users)
 });
 
 // get chores
 server.get("/:userId/chores", (req, res) => {
+  // create query param "completed"
+  const queries = req.query;
+  const completed = req.query.completed;
   // store userId from url
   const userId = parseInt(req.params.userId);
-  // store person that has userId
-  const foundPerson = people.find(person => {
-    console.log("person", person);
-    return person.id === userId;
+  // store user that has userId
+  const foundUser = users.find(user => {
+    return user.id === userId;
   });
-  // if foundPerson exists..
-  if (foundPerson) {
-    // if chores exists, return chores
-    if (foundPerson.chores) {
-      res.status(200).json(foundPerson.chores);
+  // if founduser exists..
+  if (foundUser) {
+    // if chores exists
+    if (foundUser.chores) {
+      // if completed query is true, return all completed chores
+      if (completed === "true") {
+        const completedChores = foundUser.chores.filter(
+          chore => chore.completed === true,
+        );
+        res.status(200).json(completedChores);
+        // if completed query is false, return all uncompleted chores
+      } else if (completed === "false") {
+        const uncompletedChores = foundUser.chores.filter(
+          chore => chore.completed === false,
+        );
+        res.status(200).json(uncompletedChores);
+        // else if query wasn't given, return the whole list of chores
+      } else {
+        res.status(200).json(foundUser.chores);
+      }
       // if chores does not exist, return empty array
     } else {
       res.status(500).json([]);
     }
   }
-  // if foundPerson doesn't exist, it means no person had the user Id
+  // if founduser doesn't exist, it means no user had the user Id
   else {
     res.status(400).json({ message: "User ID doesn't exist" });
   }
 });
 
 // post
-// post new person
+// post new user
 // add validateUser to ensure user added a name
-server.post("/people", validateUser, (req, res) => {
-  // create a variable that is one more than the last id in the people array
-  const latestUserId = people[people.length - 1].id + 1;
-  // store the new person into a var and add an id that auto increments
-  const newPerson = { id: latestUserId, ...req.body };
-  // add the new person to our people array
-  people.push(newPerson);
-  // send a 200 response with our updated people array
-  res.status(200).json(people);
+server.post("/users", validateUser, (req, res) => {
+  // create a variable that is one more than the last id in the users array
+  const latestUserId = users[users.length - 1].id + 1;
+  // store the new user into a var and add an id that auto increments
+  const newUser = { id: latestUserId, ...req.body };
+  // add the new user to our users array
+  users.push(newUser);
+  // send a 200 response with our updated users array
+  res.status(200).json(users);
 });
 
 // post new chore
 server.post("/chores", validateChore, (req, res) => {
   // store the id from the chore's assignedId
   const assignedId = req.body.assignedTo;
-  // store person that has userId
-  const foundPerson = people.find(person => person.id === assignedId);
-  console.log("foundPerson", foundPerson);
-  // if foundPerson exists..
-  if (foundPerson) {
+  // store user that has userId
+  const foundUser = users.find(user => user.id === assignedId);
+  // if founduser exists..
+  if (foundUser) {
     // create a variable that is one more than the latest chores ID
     const latestChoreId =
-      foundPerson.chores[foundPerson.chores.length - 1].id + 1 || 1;
-    // create the newChore that we'll add to that person's chores array
+      // check whether the chores array doesn't exist or is empty (length > 0)
+      foundUser.chores.length > 0
+        ? foundUser.chores[foundUser.chores.length - 1].id + 1
+        : 1;
+    // create the newChore that we'll add to that user's chores array
     const newChore = {
       // fill out the newChore with the stuff our FE sent us..
       id: latestChoreId,
@@ -118,21 +137,84 @@ server.post("/chores", validateChore, (req, res) => {
       // competed is either what the FE sent us, or by default false
       completed: req.body.completed || false,
     };
-    // check to see if there is an existing chores array under that user, if they do, add it to the person's chores array
-    if (foundPerson.chores) {
-      foundPerson.chores = [...foundPerson.chores, newChore];
-      res.status(200).json(people);
+    // check to see if there is an existing chores array under that user, if they do, add it to the user's chores array
+    if (foundUser.chores) {
+      foundUser.chores = [...foundUser.chores, newChore];
+      res.status(200).json(users);
     } // otherwise, create one and add the the new chore object to it
     else {
-      foundPerson.chores = [newChore];
-      res.status(200).json(people);
+      foundUser.chores = [newChore];
+      res.status(200).json(users);
     }
   }
-  // if foundPerson doesn't exist, it means no person had the user Id, or a wrong assignedTo ID was given
+  // if founduser doesn't exist, it means no user had the user Id, or a wrong assignedTo ID was given
   else {
     res.status(400).json({
       message: "User ID doesn't exist, please input a valid assignedTo ID",
     });
+  }
+});
+
+// update
+// update chore
+server.put("/users/:userId/chores/:choreId", validateChore, (req, res) => {
+  // store userId and choreId from url
+  const userId = parseInt(req.params.userId);
+  const choreId = parseInt(req.params.choreId);
+  const { id, description, notes, assignedTo, completed } = req.body;
+  // find the updating user
+  const foundUser = users.find(user => user.id === userId);
+  // find the updating chore
+  const updatingChore = foundUser.chores.find(chore => chore.id === choreId);
+  // if updating chore exists
+  if (updatingChore) {
+    // if description was given, change it
+    if (description) {
+      updatingChore.description = description;
+    }
+    // if notes was given, change it
+    if (notes) {
+      updatingChore.notes = notes;
+    }
+    // if assignedTo ID was given, change it
+    if (assignedTo) {
+      updatingChore.assignedTo = assignedTo;
+    }
+    // if completed is false, change it
+    if (completed === false) {
+      updatingChore.completed = false;
+    }
+    // if completed is true, change it
+    if (completed === true) {
+      updatingChore.completed = true;
+    }
+    // return the updated users array
+    res.status(200).json(users);
+    // if updatinguser doesn't exist, it means a user with the given userId doesn't exist, so send message
+  } else {
+    res.status(404).json({ message: "userId or choreId does not exist" });
+  }
+});
+
+// delete
+// delete chore
+server.delete("/users/:userId/chores/:choreId", (req, res) => {
+  // store userId and choreId from url
+  const userId = parseInt(req.params.userId);
+  const choreId = parseInt(req.params.choreId);
+  // if user was found
+  const foundUser = users.find(user => user.id === userId);
+  // chore to delete
+  const deletingChore = foundUser.chores.find(chore => chore.id === choreId);
+  // if deletingChore exists / was found.. / user has no chores
+  if (deletingChore) {
+    foundUser.chores = foundUser.chores.filter(chore => chore.id != choreId);
+    res.status(200).json(users);
+  } else {
+    // else it means the deletingchore doesn't exist
+    res
+      .status(404)
+      .json({ message: "A chore with that choreID doesn't exist" });
   }
 });
 
