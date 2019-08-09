@@ -101,6 +101,7 @@ server.post("/chores", validateChore, (req, res) => {
   const assignedId = req.body.assignedTo;
   // store person that has userId
   const foundPerson = people.find(person => person.id === assignedId);
+  console.log("foundPerson", foundPerson);
   // if foundPerson exists..
   if (foundPerson) {
     // create a variable that is one more than the latest chores ID
