@@ -83,9 +83,9 @@ server.get("/:userId/chores", (req, res) => {
 // add validateUser to ensure user added a name
 server.post("/people", validateUser, (req, res) => {
   // create a variable that is one more than the last id in the people array
-  const latestId = people[people.length - 1].id + 1;
+  const latestUserId = people[people.length - 1].id + 1;
   // store the new person into a var and add an id that auto increments
-  const newPerson = { id: latestId, ...req.body };
+  const newPerson = { id: latestUserId, ...req.body };
   // add the new person to our people array
   people.push(newPerson);
 });
@@ -93,21 +93,37 @@ server.post("/people", validateUser, (req, res) => {
 // post new chore
 server.post("/chores", validateChore, (req, res) => {
   // store the id from the chore's assignedId
-  const assignedId = req.params.assignedTo;
+  const { assignedId } = req.body;
   // store person that has userId
   const foundPerson = people.find(person => person.id === assignedId);
   // if foundPerson exists..
-    if (foundPerson) {
-  // create a variable that is one more than the latest ID
-  // create the newChore that we'll add to that person's chores array
-      const newChore = {
-
-      }
-      // add it to the person's chores array
+  if (foundPerson) {
+    // create a variable that is one more than the latest chores ID
+    const latestChoreId =
+      foundPerson.chores[foundPerson.chores.length - 1].id || 1;
+    // create the newChore that we'll add to that person's chores array
+    const newChore = {
+      // fill out the newChore with the stuff our FE sent us..
+      id: latestChoreId,
+      description: req.body.description,
+      notes: req.body.notes,
+      assignedTo: assignedId,
+      // competed is either what the FE sent us, or by default false
+      completed: req.body.completed || false,
+    };
+    // check to see if there is an existing chores array under that user, if they do, add it to the person's chores array
+    if (foundPerson.chores) {
+      foundPerson.chores = [...foundPerson.chores, newChore];
+    } // otherwise, create one and add the the new chore object to it
+    else {
+      foundPerson.chores = [newChore];
+    }
   }
   // if foundPerson doesn't exist, it means no person had the user Id, or a wrong assignedTo ID was given
   else {
-    res.status(400).json({ message: "User ID doesn't exist, please input a valid assigned ID" });
+    res.status(400).json({
+      message: "User ID doesn't exist, please input a valid assigned ID",
+    });
   }
 });
 
