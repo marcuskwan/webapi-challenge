@@ -58,18 +58,35 @@ server.get("/users", (req, res) => {
 
 // get chores
 server.get("/:userId/chores", (req, res) => {
+  // create query param "completed"
+  const queries = req.query;
+  const completed = req.query.completed;
   // store userId from url
   const userId = parseInt(req.params.userId);
   // store user that has userId
   const foundUser = users.find(user => {
-    console.log("user", user);
     return user.id === userId;
   });
   // if founduser exists..
   if (foundUser) {
-    // if chores exists, return chores
+    // if chores exists
     if (foundUser.chores) {
-      res.status(200).json(foundUser.chores);
+      // if completed query is true, return all completed chores
+      if (completed === "true") {
+        const completedChores = foundUser.chores.filter(
+          chore => chore.completed === true,
+        );
+        res.status(200).json(completedChores);
+        // if completed query is false, return all uncompleted chores
+      } else if (completed === "false") {
+        const uncompletedChores = foundUser.chores.filter(
+          chore => chore.completed === false,
+        );
+        res.status(200).json(uncompletedChores);
+        // else if query wasn't given, return the whole list of chores
+      } else {
+        res.status(200).json(foundUser.chores);
+      }
       // if chores does not exist, return empty array
     } else {
       res.status(500).json([]);
@@ -105,10 +122,10 @@ server.post("/chores", validateChore, (req, res) => {
   if (foundUser) {
     // create a variable that is one more than the latest chores ID
     const latestChoreId =
+      // check whether the chores array doesn't exist or is empty (length > 0)
       foundUser.chores.length > 0
         ? foundUser.chores[foundUser.chores.length - 1].id + 1
         : 1;
-    console.log(latestChoreId);
     // create the newChore that we'll add to that user's chores array
     const newChore = {
       // fill out the newChore with the stuff our FE sent us..
