@@ -104,9 +104,11 @@ server.post("/chores", validateChore, (req, res) => {
   // if founduser exists..
   if (foundUser) {
     // create a variable that is one more than the latest chores ID
-    const latestChoreId = foundUser.chores
-      ? foundUser.chores[foundUser.chores.length - 1].id + 1
-      : 1;
+    const latestChoreId =
+      foundUser.chores.length > 0
+        ? foundUser.chores[foundUser.chores.length - 1].id + 1
+        : 1;
+    console.log(latestChoreId);
     // create the newChore that we'll add to that user's chores array
     const newChore = {
       // fill out the newChore with the stuff our FE sent us..
@@ -138,7 +140,7 @@ server.post("/chores", validateChore, (req, res) => {
 
 // update
 // update chore
-server.put("/users/:userId/chores/:choreId", (req, res) => {
+server.put("/users/:userId/chores/:choreId", validateChore, (req, res) => {
   // store userId and choreId from url
   const userId = parseInt(req.params.userId);
   const choreId = parseInt(req.params.choreId);
