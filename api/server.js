@@ -37,18 +37,6 @@ const server = express();
 // use json
 server.use(express.json());
 
-// query
-
-server.get("/", (req, res) => {
-  const queryParameters = req.query;
-
-  res.status(200).json(queryParameters);
-});
-
-// // require the 2 routes
-// const userRoutes = require("./users/userRouter");
-// const postRoutes = require("./posts/postRouter");
-
 // get
 // get users
 server.get("/users", (req, res) => {
@@ -70,7 +58,7 @@ server.get("/:userId/chores", (req, res) => {
   // if founduser exists..
   if (foundUser) {
     // if chores exists
-    if (foundUser.chores) {
+    if (foundUser.chores.length > 0) {
       // if completed query is true, return all completed chores
       if (completed === "true") {
         const completedChores = foundUser.chores.filter(
@@ -161,33 +149,53 @@ server.put("/users/:userId/chores/:choreId", validateChore, (req, res) => {
   // store userId and choreId from url
   const userId = parseInt(req.params.userId);
   const choreId = parseInt(req.params.choreId);
-  const { id, description, notes, assignedTo, completed } = req.body;
+  const editedChore = req.body;
+
+  if (editedChore.assignedTo) {
+    const assignedUser = users.find(user => user.id === editedChore.assignedTo);
+    assignedUser.chores = assignedUser.chores || [];
+    let latestChoreId =
+      assignedUser.chores.length > 0
+        ? assignedUser.chores[assignedUser.chores.length - 1].id + 1
+        : 1;
+    // adding new chore with a new ID
+    assignedUser.chores.push({
+      ...editedChore,
+      id: latestChoreId,
+    });
+    const oldUser = users.find(user => user.id === userId);
+    // filtering out old chore
+    oldUser.chores = oldUser.chores.filter(chore => chore.id !== choreId);
+    return res.status(200).json(users);
+  }
   // find the updating user
   const foundUser = users.find(user => user.id === userId);
   // find the updating chore
   const updatingChore = foundUser.chores.find(chore => chore.id === choreId);
   // if updating chore exists
   if (updatingChore) {
+    for (let key in updatingChore)
+      updatingChore[key] = editedChore[key] || updatingChore[key];
     // if description was given, change it
-    if (description) {
-      updatingChore.description = description;
-    }
-    // if notes was given, change it
-    if (notes) {
-      updatingChore.notes = notes;
-    }
-    // if assignedTo ID was given, change it
-    if (assignedTo) {
-      updatingChore.assignedTo = assignedTo;
-    }
-    // if completed is false, change it
-    if (completed === false) {
-      updatingChore.completed = false;
-    }
-    // if completed is true, change it
-    if (completed === true) {
-      updatingChore.completed = true;
-    }
+    // if (description) {
+    //   updatingChore.description = description;
+    // }
+    // // if notes was given, change it
+    // if (notes) {
+    //   updatingChore.notes = notes;
+    // }
+    // // if assignedTo ID was given, change it
+    // if (assignedTo) {
+    //   updatingChore.assignedTo = assignedTo;
+    // }
+    // // if completed is false, change it
+    // if (completed === false) {
+    //   updatingChore.completed = false;
+    // }
+    // // if completed is true, change it
+    // if (completed === true) {
+    //   updatingChore.completed = true;
+    // }
     // return the updated users array
     res.status(200).json(users);
     // if updatinguser doesn't exist, it means a user with the given userId doesn't exist, so send message
